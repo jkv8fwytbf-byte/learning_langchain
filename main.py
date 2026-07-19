@@ -8,19 +8,10 @@ from langchain_core.runnables import (
 
 load_dotenv()
 
-model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+model = ChatOpenAI(model="gpt-4o", temperature=0)
 
 
-def demo_basic_chain():
-    prompt = ChatPromptTemplate.from_template(
-        "Summarize the following text in one sentence: {text}"
-    )
-    parser = StrOutputParser()
-    chain = prompt | model | parser
-    result = chain.invoke({
-        "text": "LangChain is a framework for developing applications powered by language models."
-    })
-    print(f"Summary: {result}  ")
+
 
 
 def demo_parallel_chain():
@@ -57,6 +48,11 @@ def demo_parallel_chain():
     print(f"  Sentiment: {results['sentiment']}")
 
 
+
+
+
+
+
 def demo_passthrough_chain():
     """A chain that demonstrates passthrough functionality."""
     prompt = ChatPromptTemplate.from_template(
@@ -81,6 +77,13 @@ def demo_passthrough_chain():
 
     result = chain.invoke({"question": "Who created LangChain?"})
     print(f"Answer: {result}")
+
+
+
+
+
+
+
 
 
 def demo_chain_branching():
@@ -115,6 +118,13 @@ def demo_chain_branching():
         print(f"A: {result[:100]}...\n")
 
 
+
+
+
+
+
+
+
 def demo_debbuging():
     prompt = ChatPromptTemplate.from_template("Say hello to {name}")
     chain = prompt | model | StrOutputParser()
@@ -147,6 +157,12 @@ def demo_debbuging():
     print("\nDebug chain execution:")
     result = debug_chain.invoke({"name": "Debug"})
     print(f"Greeting: {result}")
+
+
+
+
+
+
 
 
 if __name__ == "__main__":
