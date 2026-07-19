@@ -1,0 +1,61 @@
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
+from dotenv import load_dotenv
+from langchain_core.output_parsers import StrOutputParser, JsonOutputParser, PydanticOutputParser
+from pydantic import BaseModel, Field
+
+load_dotenv()
+
+
+# StrOutputParser example
+parser = StrOutputParser()
+prompt = ChatPromptTemplate.from_template("wire a short poem about {topic}")
+model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+
+chain = prompt | model | parser
+response = chain.invoke({"topic": "nature"})
+print(type(response))
+
+
+# JsonOutputParser example
+parser = JsonOutputParser()
+
+prompt = ChatPromptTemplate.from_template(
+    "Return a JSON object with 'name' and 'age' for: {description}"
+)
+
+chain = prompt | model | parser
+result = chain.invoke({"description": "A 25-year-old developer named Alex"})
+print(result)  # {'name': 'Alex', 'age': 25}
+
+
+# PydanticOutputParser example
+class Person(BaseModel):
+    name: str = Field(description="The person's name")
+    age: int = Field(description="The person's age")
+    occupation: str = Field(description="The person's occupation")
+
+
+parser = PydanticOutputParser(pydantic_object=Person)
+
+prompt = ChatPromptTemplate.from_template(
+    "Return a JSON object with 'name', 'age', and 'occupation' for: {description}"
+).partial(format_instructions=parser.get_format_instructions())
+
+chain = prompt | model | parser
+result = chain.invoke({"description": "A 30-year-old artist named Maria"})
+print(result)  # Person(name='Maria', age=30, occupation='artist')
+
+
+# Structured Output
+class MovieReview(BaseModel):
+    title: str = Field(description="The title of the movie")
+    review: str = Field(description="A brief review of the movie")
+    rating: int = Field(description="The rating of the movie out of 10")
+
+
+# Bind the schema to the model
+structured_model = model.with_structured_output(MovieReview)
+
+result = structured_model.invoke("Review: Inception is a mind-bending thriller. 9/10")
+print(result)  # MovieReview(title='Inception', review='A mind-bending thriller.', rating=9)
