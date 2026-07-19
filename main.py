@@ -3,10 +3,9 @@ from langchain_openai import ChatOpenAI
 from typing import List
 from pydantic import BaseModel, Field
 from langsmith import traceable
-from langchain_core.messages import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 load_dotenv()
 
-model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
 
 class QAResponse(BaseModel):
@@ -26,7 +25,7 @@ class QAResponse(BaseModel):
 
 
 class SmartQABot:
-    def __init__(self,model_name: str = "gpt-4o-mini",temperature: float = 0.3,):
+    def __init__(self,model_name: str = "gpt-4o",temperature: float = 0.3,):
         self.model = ChatOpenAI(model=model_name,temperature=temperature).with_structured_output(QAResponse)
         self.prompt = ChatPromptTemplate.from_messages(
             [
