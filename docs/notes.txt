@@ -1,0 +1,4 @@
+Notes on load vs lazy_load
+
+load() returns a list of all Documents at once.
+lazy_load() yields Documents one at a time — better for large folders.

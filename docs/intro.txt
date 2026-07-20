@@ -1,0 +1,8 @@
+LangChain Document Loaders
+
+A document loader turns a source (file, URL, directory)
+into one or more Document objects.
+
+Each Document has:
+- page_content: the text
+- metadata: dict with source info (path, page number, etc.)

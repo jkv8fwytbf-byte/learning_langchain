@@ -1,6 +1,10 @@
+"""Document loaders: source in → Document(s) out."""
+
 import os
-import tempfile
-from pathlib import Path
+
+# WebBaseLoader reads this at import time.
+os.environ.setdefault("USER_AGENT", "learning-doc-loaders/1.0")
+
 from langchain_core.documents import Document
 from langchain_community.document_loaders import (
     TextLoader,
@@ -9,83 +13,64 @@ from langchain_community.document_loaders import (
     PyPDFLoader,
 )
 
-
-from dotenv import load_dotenv
-
-load_dotenv()
+DOCS_DIR = "./docs"
 
 
-def load_text_file():
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".txt") as temp_file:
-        temp_file.write(
-            b"Hello, this is a sample text file.\nThis file is used to demonstrate the TextLoader."
-        )
-        temp_file_path = temp_file.name
-
-    try:
-        loader = TextLoader(temp_file_path)
-        documents = loader.load()
-
-        print(f"Loaded {len(documents)} document(s)")
-        print(f"Content preview: {documents[0].page_content[:100]}...")
-        print(f"Metadata: {documents[0].metadata}")
-    finally:
-        os.remove(temp_file_path)
+def show(docs: list[Document], preview: int = 120) -> None:
+    print(f"  loaded {len(docs)} document(s)")
+    for i, doc in enumerate(docs):
+        text = doc.page_content[:preview].replace("\n", " ")
+        print(f"  [{i}] {text!r}...")
+        print(f"      metadata: {doc.metadata}")
 
 
-def web_loader():
-    loader = WebBaseLoader(
-        "https://en.wikipedia.org/wiki/Web_scraping", bs_kwargs={"parse_only": None}
-    )
-    documents = loader.load()
-
-    print(f"Loaded {len(documents)} document(s) from web")
-    print(f"Source: {documents[0].metadata.get('source', 'N/A')}")
-    print(f"Content length: {len(documents[0].page_content)} characters")
-    print(f"Preview: {documents[0].page_content[:200]}...")
-
-
-def lazy_loader():
-    with tempfile.TemporaryDirectory() as tmpdir:
-        for i in range(5):
-            path = Path(tmpdir) / f"doc_{i}.txt"
-            path.write_text(f"This is document {i}. It contains sample content.")
-
-        loader = DirectoryLoader(tmpdir, glob="*.txt", loader_cls=TextLoader)
-
-        print("Initialized lazy loader for directory:", tmpdir)
-        for doc in loader.lazy_load():
-            print("Document Content Preview:", doc.page_content[:50], "...")
-            print("Metadata:", doc.metadata["source"])
-
-
-def doc_structure():
+def demo_document() -> None:
+    # Manual Document — what every loader returns.
     doc = Document(
         page_content="This is a sample document.",
-        metadata={
-            "source": "manual_creation.txt",
-            "author": "Paulo",
-            "length": 30,
-            "tags": ["sample", "test"],
-            "created_at": "2024-06-01",
-        },
+        metadata={"source": "manual", "author": "learner"},
     )
-
-    print("Document Structure:")
-    print(f"  page_content (type): {type(doc.page_content)}")
-    print(f"  page_content: {doc.page_content}")
+    print("Document:")
+    print(f"  page_content: {doc.page_content!r}")
     print(f"  metadata: {doc.metadata}")
 
 
-def pdf_loader(pdf_path: str):
-    loader = PyPDFLoader(pdf_path)
-    documents = loader.load()
+def demo_text_loader() -> None:
+    # path in → list[Document] out
+    docs = TextLoader(f"{DOCS_DIR}/intro.txt").load()
+    show(docs)
 
-    print(f"Loaded {len(documents)} document(s) from PDF")
-    for i, doc in enumerate(documents):
-        print(f"Document {i+1} Content Preview: {doc.page_content[:100]}...")
-        print(f"Metadata: {doc.metadata}")
+
+def demo_directory_loader() -> None:
+    # directory + glob in → Documents one-by-one via lazy_load()
+    loader = DirectoryLoader(DOCS_DIR, glob="*.txt", loader_cls=TextLoader)
+    print("  streaming with lazy_load():")
+    for doc in loader.lazy_load():
+        print(f"  - {doc.metadata['source']}: {doc.page_content[:40]!r}...")
+
+
+def demo_web_loader() -> None:
+    # URL in → list[Document] out
+    docs = WebBaseLoader("https://en.wikipedia.org/wiki/Web_scraping").load()
+    show(docs, preview=200)
+
+
+def demo_pdf_loader() -> None:
+    # PDF URL/path in → one Document per page
+    url = "https://arxiv.org/pdf/1706.03762.pdf"  # Attention Is All You Need
+    docs = PyPDFLoader(url).load()
+    show(docs[:2], preview=100)  # first 2 pages is enough for a demo
+    print(f"  (total pages: {len(docs)})")
 
 
 if __name__ == "__main__":
-    pdf_loader("./docs/langchain_demo.pdf")
+    demos = [
+        ("1. Document (the unit)", demo_document),
+        ("2. TextLoader", demo_text_loader),
+        ("3. DirectoryLoader + lazy_load", demo_directory_loader),
+        ("4. WebBaseLoader", demo_web_loader),
+        ("5. PyPDFLoader", demo_pdf_loader),
+    ]
+    for title, fn in demos:
+        print(f"\n=== {title} ===")
+        fn()

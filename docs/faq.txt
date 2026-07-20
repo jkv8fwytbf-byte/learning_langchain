@@ -1,0 +1,7 @@
+FAQ
+
+Q: What do loaders return?
+A: list[Document] from load(), or an iterator from lazy_load().
+
+Q: Do I need an API key for loaders?
+A: No. Loaders only read files or fetch URLs.
